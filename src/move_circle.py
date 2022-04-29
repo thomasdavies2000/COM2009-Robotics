@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # A simple ROS publisher node in Python
 
+import time
 import rospy
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
@@ -13,20 +14,15 @@ class Publisher():
 
         self.pub = rospy.Publisher(topic_name, Twist, queue_size=10)
         rospy.init_node(self.node_name, anonymous=True)
-        speed = 5 # debug
-        self.rate = rospy.Rate(0.033333333 * speed) # hz
-                
+        
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
-
-        self.flipped = 2
         
         rospy.loginfo(f"The '{self.node_name}' node is active...")
-        #self.rate.sleep()
+
 
     def shutdownhook(self):
         print(f"Stopping the '{self.node_name}' node at: {rospy.get_time()}")
-        self.ctrl_c = True
 
         vel_cmd = Twist()
 
@@ -34,49 +30,35 @@ class Publisher():
         vel_cmd.angular.z = 0.0
         self.pub.publish(vel_cmd)
 
+        self.ctrl_c = True
+
     def main_loop(self):
+
+        flipped = 3
 
         while not self.ctrl_c:
 
             sign = 1
 
-            if self.flipped % 2 == 0:
+            if flipped % 2 == 0:
                 sign = -1
             else:
                 sign = 1
 
-            if self.flipped == 0:
+            if flipped == 0:
                 self.shutdownhook()
             else:
+                
+                print ("flipped " + str(flipped))
+                print ("sign" + str(sign))
+
                 vel_cmd = Twist()
 
                 vel_cmd.linear.x = 0.10472
                 vel_cmd.angular.z = -0.20943951 * sign
                 self.pub.publish(vel_cmd)
-                self.rate.sleep()
-
-            sign -= 1
-
-        # while not self.ctrl_c:
-        #     if self.flipped == False:
-        #         if self.started == False:
-        #             self.started = True
-        #             self.flipped = True
-        #             vel_cmd = Twist()
-        #             vel_cmd.linear.x = 0.10472
-        #             vel_cmd.angular.z = -0.20943951
-        #             self.pub.publish(vel_cmd)
-        #             self.rate.sleep()
-        #         else:
-        #             self.shutdownhook()
-        #     else:
-        #         self.flipped = False
-        #         vel_cmd = Twist()
-        #         vel_cmd.linear.x = 0.10472
-        #         vel_cmd.angular.z = 0.20943951
-        #         self.pub.publish(vel_cmd)
-        #         self.rate.sleep()
-        
+                flipped -= 1
+                time.sleep(30)
 
 if __name__ == '__main__':
     publisher_instance = Publisher()
